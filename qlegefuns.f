@@ -11,6 +11,33 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
 c 
         subroutine zqneval_scaled(z, n, qfuns)
+        implicit real *8 (a-h,o-z)
+        complex *16 z, qfuns(0:n), d
+c
+c       this routine is the same as zqneval, except that it returns
+c       a scaled version of the Q_n's, in fact it returns
+c
+c         Q_n(z)
+c        --------
+c       \Gamma(n+1)
+c
+c       input:
+c         z - the point in the complex plane, assumes that IM(z) .neq. 0
+c         n - highest order to evaluate, 0 through n are evaluated
+c
+        done=1
+        i0=0
+        d=log( (done+z)/(done-z) )
+c 
+        qfuns(i0) = d/2
+        qfuns(1) = z/2*d-1
+c 
+c       recurse up
+c 
+        do i=1,n-1
+          qfuns(i+1)=( (2*i+1)*z*qfuns(i)-i*qfuns(i-1) ) /(i+1)
+        enddo
+c
         return
         end
 c
@@ -28,7 +55,7 @@ c
 c
         subroutine zqneval(z, n, qfuns)
         implicit real *8 (a-h,o-z)
-        complex *16 z, qfuns(0:n)
+        complex *16 z, qfuns(0:n), d
 c
 c       This subroutine evaluates Q_0(z), ..., Q_n(z) for arbitrary
 c       complex values of z. The upward recurrence is used everywhere, as
@@ -37,7 +64,7 @@ c       evaluate Q_n on the real-line, use the routine qneval - this routine
 c       will NOT return the principal value of Q_n for z with arbitrarily
 c       small imaginary parts.
 c
-c        construct Q_0(z) and Q_1(z)
+c       construct Q_0(z) and Q_1(z)
 c 
         done=1
         i0=0
@@ -52,11 +79,6 @@ c
           qfuns(i+1)=( (2*i+1)*z*qfuns(i)-i*qfuns(i-1) ) /(i+1)
         enddo
 c 
-        return        
-
-
-
-c
         return
         end
 c

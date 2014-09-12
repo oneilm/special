@@ -1,7 +1,10 @@
         implicit real *8 (a-h,o-z)
-        dimension qfuns(1000),qfuns3(1000)
+        dimension qfuns(100000),qfuns3(100000)
+        complex *16 z, zfuns(100000), ima
 c 
+
         call prini(6,13)
+        ima = (0,1)
 C 
 C       SET ALL PARAMETERS
 C 
@@ -9,10 +12,8 @@ C
         READ *, n
         CALL PRInf('n=*',n,1 )
 C 
-        PRINT *, 'ENTER x'
-        READ *,x
-        CALL PRIn2('x=*',x,1 )
-c 
+        x = .5d0
+        call prin2('x = *', x, 1)
         call prin2('and x-1=*',x-1,1)
 c 
 c        evaluate Q_n (x) via qlegfuns
@@ -37,7 +38,25 @@ cccc        call prin2('relative diffs = *', qfuns, n+1)
         call prinf2('from qneval:*', x, 0)
         do i = 1,n+1
           write(6,*) 'i = ', i-1, 'val = ', qfuns3(i)
+          write(13,*) 'i = ', i-1, 'val = ', qfuns3(i)
         enddo
+
+
+c
+c       test the complex routine, which just runs the forward
+c       recursion
+c
+        eps = 1.0d-13
+        z = 1.5d0 + ima*eps
+        call prin2('z = *', z, 2)
+        call zqneval(z, n, zfuns)
+c
+        call prinf2('from zqneval:*', x, 0)
+        do i = 1,n+1
+          write(6,*) 'i = ', i-1, 'val = ', zfuns(i)
+          write(13,*) 'i = ', i-1, 'val = ', zfuns(i)
+        enddo
+
 
         stop
         end
