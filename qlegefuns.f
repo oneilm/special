@@ -10,33 +10,15 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
 c 
-        subroutine zqneval_scaled(z, n, qfuns)
+        subroutine qlege01(x, q0, q1)
         implicit real *8 (a-h,o-z)
-        complex *16 z, qfuns(0:n), d
 c
-c       this routine is the same as zqneval, except that it returns
-c       a scaled version of the Q_n's, in fact it returns
+c       this routine evaluates Q_0 and Q_1 for |x| .neq. 1
 c
-c         Q_n(z)
-c        --------
-c       \Gamma(n+1)
-c
-c       input:
-c         z - the point in the complex plane, assumes that IM(z) .neq. 0
-c         n - highest order to evaluate, 0 through n are evaluated
-c
-        done=1
-        i0=0
-        d=log( (done+z)/(done-z) )
-c 
-        qfuns(i0) = d/2
-        qfuns(1) = z/2*d-1
-c 
-c       recurse up
-c 
-        do i=1,n-1
-          qfuns(i+1)=( (2*i+1)*z*qfuns(i)-i*qfuns(i-1) ) /(i+1)
-        enddo
+        done = 1
+        d = log( abs((done+x)/(done-x)) )
+        q0 = d/2
+        q1 = x/2*d-1
 c
         return
         end
@@ -45,7 +27,17 @@ c
 c
 c
 c
-        subroutine qneval_scaled(x, n, qfuns)
+        subroutine zqlege01(z, q0, q1)
+        implicit real *8 (a-h,o-z)
+        complex *16 z, q0, q1, d
+c
+c       this routine evaluates Q_0 and Q_1 for |x| .neq. 1
+c
+        done = 1
+        d = log((done+z)/(done-z))
+        q0 = d/2
+        q1 = x/2*d-1
+c
         return
         end
 c

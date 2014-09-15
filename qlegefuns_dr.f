@@ -1,6 +1,6 @@
         implicit real *8 (a-h,o-z)
         dimension qfuns(100000),qfuns3(100000)
-        complex *16 z, zfuns(100000), ima
+        complex *16 z, zfuns(100000), ima, zfuns2(100000)
 c 
 
         call prini(6,13)
@@ -46,8 +46,12 @@ c
 c       test the complex routine, which just runs the forward
 c       recursion
 c
+c       NOTE: several calculations have been checked against
+c       40 digit calculations run in Mathematica and reliably agree
+c       to 13 or 14 digits, unless x is very close to 1 or -1
+c
         eps = 1.0d-13
-        z = 1.5d0 + ima*eps
+        z = 1.1d0 + ima*eps
         call prin2('z = *', z, 2)
         call zqneval(z, n, zfuns)
 c
@@ -56,8 +60,7 @@ c
           write(6,*) 'i = ', i-1, 'val = ', zfuns(i)
           write(13,*) 'i = ', i-1, 'val = ', zfuns(i)
         enddo
-
-
+c
         stop
         end
 c 
