@@ -31,6 +31,10 @@ c       identity
 c
 c       Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
 c
+c       all of the following calculations are done assuming that we
+c       define the branch cut in Q_n along the interval [-1,1] so that
+c       there is a jump
+c
 c       input:
 c         z - target point
 c         k - number of legendre nodes at which f is evaluated
@@ -39,8 +43,6 @@ c
 c       output:
 c         pot - the Cauchy transform of f
 c
-c
-        done = 1
 c
 c       get the expansion coefficients of vals
 c
@@ -58,8 +60,6 @@ c
         do i = 0,k-1
           coefs(i) = coefs_real(i) + ima*coefs_imag(i)
         enddo
-c
-cccc        call prin2('coefs = *', coefs, 2*k)
 c
         call zqneval(z, k, qfuns)
 c
