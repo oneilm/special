@@ -60,7 +60,7 @@ c       construct Q_0(z) and Q_1(z)
 c 
         done=1
         i0=0
-        d=log( (done+z)/(done-z) )
+        d=log( (done+z)/(z-1) ) 
 c 
         qfuns(i0) = d/2
         qfuns(1) = z/2*d-1

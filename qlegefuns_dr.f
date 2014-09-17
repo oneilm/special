@@ -51,7 +51,7 @@ c       40 digit calculations run in Mathematica and reliably agree
 c       to 13 or 14 digits, unless x is very close to 1 or -1
 c
         eps = 1.0d-13
-        z = 1.1d0 + ima*eps
+        z = .5d0 - ima*eps
         call prin2('z = *', z, 2)
         call zqneval(z, n, zfuns)
 c
