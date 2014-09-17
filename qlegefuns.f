@@ -10,10 +10,94 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
 c 
+        subroutine cauchy_legendre(z, k, vals, pot)
+        implicit real *8 (a-h,o-z)
+        complex *16 ima, z, vals(k), pot
+c
+        data ima/(0,1)/
+        real *8 xs(10000), ys(10000), xnodes(10000)
+        real *8 u(1000000), v(1000000), whts(10000)
+        real *8 coefs_real(0:10000), coefs_imag(0:10000)
+        complex *16 coefs(0:10000), qfuns(0:10000)
+c
+c       this routine computes the integral:
+c
+c          pot = \int_{-1}^1  f(x)/(z - x) dx
+c
+c       where f(x) is a (complex) function sampled at k legendre 
+c       nodes on [-1,1]. The target z can be arbitrary, as the
+c       Cauchy transform is evaluated using the following P_n, Q_n
+c       identity
+c
+c       Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
+c
+c       input:
+c         z - target point
+c         k - number of legendre nodes at which f is evaluated
+c         vals - the values of f at the k legendre nodes, complex valued
+c
+c       output:
+c         pot - the Cauchy transform of f
+c
+c
+        done = 1
+c
+c       get the expansion coefficients of vals
+c
+        itype = 2
+        call legeexps(itype, k, xnodes, u, v, whts)
+c        
+        do i = 1,k
+          xs(i) = vals(i)
+          ys(i) = -ima*vals(i)
+        enddo
+c
+        call matvec(k, u, xs, coefs_real)
+        call matvec(k, u, ys, coefs_imag)
+c
+        do i = 0,k-1
+          coefs(i) = coefs_real(i) + ima*coefs_imag(i)
+        enddo
+c
+cccc        call prin2('coefs = *', coefs, 2*k)
+c
+        call zqneval(z, k, qfuns)
+c
+        pot = 0
+        do i = 0,k-1
+          pot = pot + 2*coefs(i)*qfuns(i)
+        enddo
+c
+        return
+        end
+c
+c
+c
+c
+c
+        subroutine matvec(n, a, x, y)
+        implicit real *8 (a-h,o-z)
+        real *8 a(n,n), x(n), y(n)
+c
+        do i = 1,n
+          d = 0
+          do j = 1,n
+            d = d + a(i,j)*x(j)
+          enddo
+          y(i) = d
+        enddo
+c
+        return
+        end
+c
+c
+c
+c
+c
         subroutine qlege01(x, q0, q1)
         implicit real *8 (a-h,o-z)
 c
-c       this routine evaluates Q_0 and Q_1 for |x| .neq. 1
+c       this routine evaluates Q_0 and Q_1 on R for |x| .neq. 1
 c
         done = 1
         d = log( abs((done+x)/(done-x)) )
@@ -31,10 +115,11 @@ c
         implicit real *8 (a-h,o-z)
         complex *16 z, q0, q1, d
 c
-c       this routine evaluates Q_0 and Q_1 for |x| .neq. 1
+c       this routine evaluates Q_0 and Q_1 for complex argument
+c       *off* of the real line
 c
         done = 1
-        d = log((done+z)/(done-z))
+        d = log((done+z)/(z-1))
         q0 = d/2
         q1 = x/2*d-1
 c
@@ -60,7 +145,7 @@ c       construct Q_0(z) and Q_1(z)
 c 
         done=1
         i0=0
-        d=log( (done+z)/(z-1) ) 
+        d=log( (done+z)/(z-done) ) 
 c 
         qfuns(i0) = d/2
         qfuns(1) = z/2*d-1

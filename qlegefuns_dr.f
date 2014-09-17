@@ -1,10 +1,14 @@
         implicit real *8 (a-h,o-z)
-        dimension qfuns(100000),qfuns3(100000)
-        complex *16 z, zfuns(100000), ima, zfuns2(100000)
+        real *8 qfuns(100000),qfuns3(100000)
+        real *8 xs(10000), whts(10000)
+        complex *16 z, zfuns(0:100000), ima, zfuns2(0:100000)
+        complex *16 zint, q0, q1, vals(100000), pot
 c 
 
         call prini(6,13)
         ima = (0,1)
+        done = 1
+        pi = 4*atan(done)
 C 
 C       SET ALL PARAMETERS
 C 
@@ -56,11 +60,76 @@ c
         call zqneval(z, n, zfuns)
 c
         call prinf2('from zqneval:*', x, 0)
-        do i = 1,n+1
+        do i = 0,n
           write(6,*) 'i = ', i-1, 'val = ', zfuns(i)
           write(13,*) 'i = ', i-1, 'val = ', zfuns(i)
         enddo
 c
+
+c
+c       compute the hilbert transform of P_n and compare to see if we're
+c       getting the right answer
+c
+        z = 3.5+ima/10
+        k = 20
+        itype_rts = 1
+        call legerts(itype_rts, k, xs, whts)
+        call prin2('roots = *', xs, k)
+        call prin2('weights = *', whts, k)
+c
+        zint = 0
+        do i = 1,k
+          zint = zint + whts(i)/(-xs(i) + z)/2
+        enddo
+c
+        call prin2('Cauchy integral of 1 = *', zint, 2)
+c
+        call zqlege01(z, q0, q1)
+        call prin2('Q_0 = *', q0, 2)
+
+        call prin2('diff = *', zint - q0, 2)
+
+c
+c       try the cauchy integral of P_m
+c
+        print *
+        print *
+        m = 5
+        call prinf('degree of P_m, m = *', m, 1)
+c
+        zint = 0
+        do i = 1,k
+          call legepol(xs(i), m, pol, der)
+          zint = zint + whts(i)*pol/(-xs(i) + z)/2
+        enddo
+c
+        call prin2('Cauchy integral of P_m = *', zint, 2)
+c
+        call zqneval(z, m, zfuns)
+        call prin2('Q_m(z) = *', zfuns(m), 2)
+        call prin2('diff = *', zint - zfuns(m), 2)
+
+c
+c       test the routine for computing the Cauchy transform
+c       of a Legendre expansion
+c
+        do i = 1,k
+          vals(i) = cos(pi*xs(i)) + ima*sin(pi*xs(i))
+        enddo
+c
+        z = .5 + ima
+        call cauchy_legendre(z, k, vals, pot)
+        call prin2('from cauchy_legendre, pot = *', pot, 2)
+c
+        zint = 0
+        do i = 1,k
+          zint = zint + whts(i)*vals(i)/(z - xs(i))
+        enddo
+c
+        call prin2('discretely, pot = *', zint, 2)
+        call prin2('different = *', pot - zint, 2)
+        
+
         stop
         end
 c 
