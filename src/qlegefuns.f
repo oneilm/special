@@ -12,7 +12,54 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
 c 
-        subroutine cauchy_legendre(z, k, vals, pot)
+        subroutine hilbert_legendre_ab(a, b, z, k, vals, pot)
+        implicit real *8 (a-h,o-z)
+        complex *16 ima, z, vals(k), pot, z2
+c
+        data ima/(0,1)/
+c
+c       this routine computes the integral:
+c
+c          pot = \int_a^b  f(x)/(z - x) dx
+c
+c       where f(x) is a (complex) function sampled at k legendre 
+c       nodes on [a,b]. The target z can be arbitrary, as the
+c       Hilbert transform is evaluated using the following P_n, Q_n
+c       identity
+c
+c          Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
+c
+c       all of the following calculations are done assuming that we
+c       define the branch cut in Q_n along the interval [-1,1] so that
+c       there is a jump
+c
+c       input:
+c         z - target point
+c         k - number of legendre nodes at which f is evaluated
+c         vals - the values of f at the k legendre nodes, complex valued
+c
+c       output:
+c         pot - the Hilbert transform of f on [a,b]
+c
+c
+        done = 1
+c
+c       compute the equivalent target relative to [-1,1]
+c
+        z2 = 2*(z-a)/(b-a)-1
+cccc        call prin2('z = *', z, 2)
+        call prin2('z2 = *', z2, 2)
+cccc        stop
+        call hilbert_legendre(z2, k, vals, pot)
+c
+        return
+        end
+c
+c
+c
+c
+c
+        subroutine hilbert_legendre(z, k, vals, pot)
         implicit real *8 (a-h,o-z)
         complex *16 ima, z, vals(k), pot
 c
@@ -28,10 +75,10 @@ c          pot = \int_{-1}^1  f(x)/(z - x) dx
 c
 c       where f(x) is a (complex) function sampled at k legendre 
 c       nodes on [-1,1]. The target z can be arbitrary, as the
-c       Cauchy transform is evaluated using the following P_n, Q_n
+c       Hilbert transform is evaluated using the following P_n, Q_n
 c       identity
 c
-c       Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
+c          Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
 c
 c       all of the following calculations are done assuming that we
 c       define the branch cut in Q_n along the interval [-1,1] so that
@@ -43,7 +90,7 @@ c         k - number of legendre nodes at which f is evaluated
 c         vals - the values of f at the k legendre nodes, complex valued
 c
 c       output:
-c         pot - the Cauchy transform of f
+c         pot - the Hilbert transform of f
 c
 c
 c       get the expansion coefficients of vals
@@ -65,16 +112,50 @@ c
 c
         call prin2('coefs = *', coefs, 2*k)
 c
-        call zqneval(z, k, qfuns)
-        call prin2('qfuns = *', qfuns, 2*k)
+c       crop the coefficients so as to not overresolve
+c
+        rnorm = 0
+        eps = 1.0d-12
+        do i = 0,k-1
+          rnorm = rnorm + abs(coefs(i))**2
+        enddo
+
+        rnorm2 = 0
+c
+        do i = 0,k-1
+          rnorm2 = rnorm2 + abs(coefs(i))**2
+          rnorm3 = 0
+          do j = i+1,k-1
+            rnorm3 = rnorm3 + abs(coefs(j))**2
+          enddo
+          ratio = sqrt(rnorm3/rnorm2)
+          nterms = i
+          if (ratio .le. eps) then
+            goto 1300
+          endif
+        enddo
+
+ 1300 continue
+
+c
+c       only sum over the first nterms
+c
+        call zqneval(z, nterms, qfuns)
+        call prin2('coefs = *', coefs, 2*nterms)
+        call prin2('qfuns = *', qfuns, 2*nterms)
+c
+c        write(6,*) 'z = ', z
+c        do i = 0,nterms
+c          write(6,*) 'i = ', i, qfuns(i)
+c        enddo
 c
         pot = 0
-        do i = 0,k-1
+        do i = 0,nterms
           pot = pot + 2*coefs(i)*qfuns(i)
           zterms(i) = 2*coefs(i)*qfuns(i)
         enddo
 c
-        call prin2('zterms = *', zterms, 2*k)
+c        call prin2('zterms = *', zterms, 2*nterms)
 
 c
         return

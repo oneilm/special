@@ -118,9 +118,9 @@ c
           vals(i) = exp(ima*14.5d0*xs(i))
         enddo
 c
-        z = 1.9d0 + ima
-        call cauchy_legendre(z, k, vals, pot)
-        call prin2('from cauchy_legendre, pot = *', pot, 2)
+        z = 1.25d0 + ima*.5d0
+        call hilbert_legendre(z, k, vals, pot)
+        call prin2('from hilbert_legendre, pot = *', pot, 2)
 c
         zint = 0
         do i = 1,k
@@ -130,6 +130,47 @@ c
         call prin2('discretely, pot = *', zint, 2)
         call prin2('difference = *', pot - zint, 2)
         
+c
+c       test the piecewise routine
+c
+        print *
+        print *
+        print *
+c
+        a = .2d0
+        b = .8d0
+        h = b-a
+
+c        call prin2('before, xs = *', xs, k)
+c        call prin2('before, whts = *', whts, k)
+
+        do i = 1,k
+          xs(i) = (xs(i)+1)/2*h + a
+          whts(i) = whts(i)/2*h
+        enddo
+c
+c        call prin2('after, xs = *', xs, k)
+c        call prin2('after, whts = *', whts, k)
+c        stop
+
+        do i = 1,k
+          vals(i) = cos(pi*xs(i)) + ima*sin(pi*xs(i))
+cc          vals(i) = exp(ima*14.5d0*xs(i))
+cc          vals(i) = 1
+        enddo
+c
+        z = 1.25d0 + ima*.5d0
+        call hilbert_legendre_ab(a, b, z, k, vals, pot)
+        call prin2('from hilbert_legendre_ab, pot = *', pot, 2)
+c
+        zint = 0
+        do i = 1,k
+          zint = zint + whts(i)*vals(i)/(z - xs(i))
+        enddo
+c
+        call prin2('discretely, pot = *', zint, 2)
+        call prin2('difference = *', pot - zint, 2)
+
 
         stop
         end
