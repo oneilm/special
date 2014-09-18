@@ -71,9 +71,9 @@ c       compute the hilbert transform of P_n and compare to see if we're
 c       getting the right answer
 c
         z = 3.5+ima/10
-        k = 20
-        itype_rts = 1
-        call legerts(itype_rts, k, xs, whts)
+        k = 50
+        ifwhts = 1
+        call legewhts(k, xs, whts, ifwhts)
         call prin2('roots = *', xs, k)
         call prin2('weights = *', whts, k)
 c
@@ -115,9 +115,10 @@ c       of a Legendre expansion
 c
         do i = 1,k
           vals(i) = cos(pi*xs(i)) + ima*sin(pi*xs(i))
+          vals(i) = exp(ima*14.5d0*xs(i))
         enddo
 c
-        z = .5 + ima
+        z = 1.9d0 + ima
         call cauchy_legendre(z, k, vals, pot)
         call prin2('from cauchy_legendre, pot = *', pot, 2)
 c
@@ -127,7 +128,7 @@ c
         enddo
 c
         call prin2('discretely, pot = *', zint, 2)
-        call prin2('different = *', pot - zint, 2)
+        call prin2('difference = *', pot - zint, 2)
         
 
         stop

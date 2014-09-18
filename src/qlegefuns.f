@@ -1,11 +1,13 @@
+c Copyright (c) 2014: Michael O'Neil and Vladimir Rokhlin
 c 
-c 
+c      See git history for revision data 
 c 
 c 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
 c      This is the end of the testing code and the beginning of the
-c      code for the evaluation of the Legendre functions Q_i
+c      code for the evaluation of the Legendre functions Q_n and other
+c      routines...
 c 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
@@ -18,7 +20,7 @@ c
         real *8 xs(10000), ys(10000), xnodes(10000)
         real *8 u(1000000), v(1000000), whts(10000)
         real *8 coefs_real(0:10000), coefs_imag(0:10000)
-        complex *16 coefs(0:10000), qfuns(0:10000)
+        complex *16 coefs(0:10000), qfuns(0:10000), zterms(0:10000)
 c
 c       this routine computes the integral:
 c
@@ -61,12 +63,19 @@ c
           coefs(i) = coefs_real(i) + ima*coefs_imag(i)
         enddo
 c
+        call prin2('coefs = *', coefs, 2*k)
+c
         call zqneval(z, k, qfuns)
+        call prin2('qfuns = *', qfuns, 2*k)
 c
         pot = 0
         do i = 0,k-1
           pot = pot + 2*coefs(i)*qfuns(i)
+          zterms(i) = 2*coefs(i)*qfuns(i)
         enddo
+c
+        call prin2('zterms = *', zterms, 2*k)
+
 c
         return
         end

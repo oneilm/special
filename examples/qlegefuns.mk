@@ -9,7 +9,7 @@ FLINK=gfortran -w -o $(PROJECT)
 .f.$(OBJSUF):
 		$(FC) $<
 
-vpath %.f .:../utils
+vpath %.f .:../src
 
 FSRCS   =   qlegefuns_dr.f qlegefuns.f  prini.f legeexps.f
 
