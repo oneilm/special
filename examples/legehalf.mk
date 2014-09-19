@@ -1,15 +1,15 @@
 PROJECT=int2
 
 OBJSUF=o
-FC=f90  -w -c
-FLINK=f90  -w -o $(PROJECT)
+FC=gfortran  -w -c
+FLINK=gfortran -w -o $(PROJECT)
 
 .PHONY: $(PROJECT) clean list
 
 .f.$(OBJSUF):
 		$(FC) $<
 
-vpath %.f .:../bin
+vpath %.f .:../src
 
 FSRCS   =   legehalf_dr.f legehalf.f  prini.f
 
