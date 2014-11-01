@@ -1,8 +1,13 @@
 PROJECT=int2
+HOST = osx-gfortran
+HOST = osx-intel
 
 OBJSUF=o
-FC=gfortran -w -c
-FLINK=gfortran -w -o $(PROJECT)
+##FC=gfortran -w -c
+##FLINK=gfortran -w -o $(PROJECT)
+
+FC=ifort -w -c
+FLINK=ifort -o $(PROJECT)
 
 .PHONY: $(PROJECT) clean list
 
