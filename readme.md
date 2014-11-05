@@ -1,6 +1,8 @@
 ### Special functions repository
 
-The following files are described:
+Example driver codes are in the examples/ directory.
+
+The following library files are described:
 
 ## src/prinif.
 Basic screen/file printing routines.
