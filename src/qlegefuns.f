@@ -218,12 +218,20 @@ c
         complex *16 z, q0, q1, d
 c
 c       this routine evaluates Q_0 and Q_1 for complex argument
-c       *off* of the real line
+c       *off* of the real line - this assumes the branch cut is
+c       on [-1,1]
+c
+c       input:
+c         z - a complex number
+c
+c       output:
+c         q0 - the value of Q_0(z)  
+c         q1 - the value of Q_1(z)  
 c
         done = 1
-        d = log((done+z)/(z-1))
+        d = log((done+z)/(z - done))
         q0 = d/2
-        q1 = x/2*d-1
+        q1 = z/2*d-1
 c
         return
         end
@@ -234,28 +242,41 @@ c
 c
         subroutine zqneval(z, n, qfuns)
         implicit real *8 (a-h,o-z)
-        complex *16 z, qfuns(0:n), d
+        complex *16 z, qfuns(0:n), d, q0, q1
 c
 c       This subroutine evaluates Q_0(z), ..., Q_n(z) for arbitrary
-c       complex values of z. The upward recurrence is used everywhere, as
-c       Q_n blows up for values of z off the real-line. If you want to
+c       complex values of z. If you want to
 c       evaluate Q_n on the real-line, use the routine qneval - this routine
 c       will NOT return the principal value of Q_n for z with arbitrarily
 c       small imaginary parts.
 c
-c       construct Q_0(z) and Q_1(z)
+c       input:
+c         z - the complex point at which to evaluate Q_0, ..., Q_n
+c         n - the order of the highest q_n to return
+c
+c       NOTE: The branch cut is taken to be on [-1,1], consistent with
+c       the identity:
+c
+c               Q_n(z) = 1/2 \int_{-1}^1 P_n(x)/(z - x) dx
+c
+c       first, construct Q_0(z) and Q_1(z)
 c 
-        done=1
-        i0=0
-        d=log( (done+z)/(z-done) ) 
-c 
-        qfuns(i0) = d/2
-        qfuns(1) = z/2*d-1
-c 
-c       recurse up
+        call zqlege01(z, q0, q1)
+        qfuns(0) = q0
+        if (n .eq. 0) return
+c
+        qfuns(1) = q1
+        if (n .eq. 1) return
+c
+c       recurse up until 
 c 
         do i=1,n-1
+cccc        do i=1,900
           qfuns(i+1)=( (2*i+1)*z*qfuns(i)-i*qfuns(i-1) ) /(i+1)
+cccc          call prinf('i = *', i+1, 1)
+cccc          call prin2('qfuns = *', qfuns(i+1), 2)
+cccc          call prin2('abs qfuns = *', abs(qfuns(i+1)), 2)
+cccc          write(6,*) 'i = ', i+1, abs(qfuns(i+1))
         enddo
 c 
         return
@@ -279,20 +300,20 @@ c        the imaginary party of Q_n explodes exponentially
 c
 c                        Input parameters:
 c 
-c  x - the point where the functions Q_i will be evaluated
-c  n - maximum order of Q to be evaluated
+c     x - the point where the functions Q_i will be evaluated
+c     n - maximum order of Q to be evaluated
 c 
 c                        Output parameters:
 c 
-c  qfuns - the values of the Legendre functions at the
-c      point x (n+1 of them things) - this actually needs to be
-c      something like n+3 because of up/down recurrences
+c     qfuns - the values of the Legendre functions at the
+c          point x (n+1 of them things) - this actually needs to be
+c          something like n+3 because of up/down recurrences
 c
-c  NOTE: the indexing of qfuns begins at 0 !!!
+c     NOTE: the indexing of qfuns begins at 0 !!!
 c
-c  NOTE 2: you will lose digits if x is extremely close to +/- 1 because
-c     of floating point errors in subtraction - this cannot be avoided.
-c     See the special purpose routine ... for this case.
+c     NOTE 2: you will lose digits if x is extremely close to +/- 1 because
+c         of floating point errors in subtraction - this cannot be avoided.
+c         See the special purpose routine ... for this case.
 c 
 c        . . . if x is inside the interval [-1,1], or sufficiently
 c              close to 1 or -1, evaluate the Legenedre functions

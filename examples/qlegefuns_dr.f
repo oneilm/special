@@ -17,11 +17,14 @@ c       You should have received a copy of the GNU General Public License
 c       along with this program.  If not, see <http://www.gnu.org/licenses/>.
 c
 c
+c
         implicit real *8 (a-h,o-z)
         real *8 qfuns(100000),qfuns3(100000)
         real *8 xs(10000), whts(10000)
+        real *8 errs(10000)
         complex *16 z, zfuns(0:100000), ima, zfuns2(0:100000)
-        complex *16 zint, q0, q1, vals(100000), pot
+        complex *16 zint, zint1, q0, q1, vals(100000), pot
+        complex *16 cvals(100000), cvals2(10000)
 c 
 
         call prini(6,13)
@@ -42,20 +45,18 @@ c
 c        evaluate Q_n (x) via qlegfuns
 c 
         call qlegfuns(x,n,qfuns)
-c 
         call prin2('qfuns after qlegfuns is*',qfuns,n+1)
 c 
 c        now, evaluate the functions via the qneval
 c 
         call qneval(x, n, qfuns3)
-c 
         call prin2('and qfuns3 via qneval*',qfuns3,n+1)
 c 
         do i = 1,n+1
-ccc          qfuns(i) = (qfuns(i) - qfuns3(i))/qfuns3(i)
+          errs(i) = (qfuns(i) - qfuns3(i))/qfuns3(i)
         enddo
 c
-cccc        call prin2('relative diffs = *', qfuns, n+1)
+        call prin2('relative diffs = *', errs, n+1)
 
 
         call prinf2('from qneval:*', x, 0)
@@ -66,55 +67,49 @@ cccc        call prin2('relative diffs = *', qfuns, n+1)
 
 
 c
-c       test the complex routine, which just runs the forward
-c       recursion
+c       test the complex routine for Q_0 and Q_1
 c
-c       NOTE: several calculations have been checked against
-c       40 digit calculations run in Mathematica and reliably agree
-c       to 13 or 14 digits, unless x is very close to 1 or -1
-c
-        eps = 1.0d-13
-        z = .5d0 - ima*eps
+        print *
+        print *
+
+        small = 1.0d-1
+        small = 1.0d0
+        small = 1.0d-1
+        z = .5d0 - ima*small
         call prin2('z = *', z, 2)
-        call zqneval(z, n, zfuns)
+        call zqlege01(z, q0, q1)
 c
-        call prinf2('from zqneval:*', x, 0)
-        do i = 0,n
-          write(6,*) 'i = ', i-1, 'val = ', zfuns(i)
-          write(13,*) 'i = ', i-1, 'val = ', zfuns(i)
-        enddo
-c
+        call prin2('from zqlege01, q0 = *', q0, 2)
+        call prin2('from zqlege01, q1 = *', q1, 2)
 
 c
-c       compute the hilbert transform of P_n and compare to see if we're
-c       getting the right answer
+c       and compare with the actual hilbert transform of P_0 and P_1
 c
-        z = 3.5+ima/10
-        k = 50
+        k = 32 
         ifwhts = 1
         call legewhts(k, xs, whts, ifwhts)
-        call prin2('roots = *', xs, k)
-        call prin2('weights = *', whts, k)
 c
         zint = 0
+        zint1 = 0
         do i = 1,k
           zint = zint + whts(i)/(-xs(i) + z)/2
+          zint1 = zint1 + whts(i)*xs(i)/(-xs(i) + z)/2
         enddo
 c
         call prin2('Cauchy integral of 1 = *', zint, 2)
+        call prin2('Cauchy integral of x = *', zint1, 2)
 c
-        call zqlege01(z, q0, q1)
-        call prin2('Q_0 = *', q0, 2)
-
-        call prin2('diff = *', zint - q0, 2)
+        call prin2('error in Q_0 = *', q0-zint, 2)
+        call prin2('error in Q_1 = *', q1-zint1, 2)
 
 c
 c       try the cauchy integral of P_m
 c
         print *
         print *
-        m = 5
+        m = 16
         call prinf('degree of P_m, m = *', m, 1)
+        call prin2('target = *', z, 2)
 c
         zint = 0
         do i = 1,k
@@ -127,6 +122,35 @@ c
         call zqneval(z, m, zfuns)
         call prin2('Q_m(z) = *', zfuns(m), 2)
         call prin2('diff = *', zint - zfuns(m), 2)
+c
+c       find the ellipse on which you can just evaluate the
+c       Cauchy transform
+c
+        ntheta = 200
+        a = 1.5d0
+        b = .5d0
+c
+        do j = 1,ntheta
+          theta = 2*pi*(j-1)/ntheta
+          z = a*cos(theta) + ima*b*sin(theta)
+          zint = 0
+          do i = 1,k
+            call legepol(xs(i), m, pol, der)
+            zint = zint + whts(i)*pol/(z - xs(i))/2
+          enddo
+          cvals(j) = zint
+          call zqneval(z, m, zfuns)
+          cvals2(j) = zfuns(m)
+        enddo
+c
+        do j = 1,ntheta
+          errs(j) = cvals(j) - cvals2(j)
+        enddo
+c
+        call prin2('cvals = *', cvals, 2*ntheta)
+        call prin2('errs on ellipse = *', errs, ntheta)
+        stop
+
 
 c
 c       test the routine for computing the Cauchy transform
@@ -195,6 +219,25 @@ c
         end
 c 
 c 
+c
+c
+c
+        subroutine prinzfull(n, zs)
+        implicit real *8 (a-h,o-z)
+        complex *16 zs(n)
+c
+        do i = 1,n
+          x = zs(i)
+          y = imag(zs(i))
+          write(6,1200) x, y 
+        enddo
+c
+ 1200 FORMAT(e23.16, ' + ', e23.16, '*I')
+c
+        return
+        end
+c
+c       
 c
 c
 c
