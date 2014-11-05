@@ -1,4 +1,4 @@
-c       This is a driver file for Cauchy transforms of Legendre polys
+c       This is a library file for Cauchy transforms of Legendre polys
 c
 c       Copyright (c) 2014  Vladimir Rokhlin
 c                           Michael O'Neil
