@@ -29,7 +29,6 @@ c
         subroutine hilbert_legendre_ab(a, b, z, k, vals, pot)
         implicit real *8 (a-h,o-z)
         complex *16 ima, z, vals(k), pot, z2
-c
         data ima/(0,1)/
 c
 c       this routine computes the integral:
@@ -45,7 +44,7 @@ c          Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
 c
 c       all of the following calculations are done assuming that we
 c       define the branch cut in Q_n along the interval [-1,1] so that
-c       there is a jump
+c       there is a jump in the Hilbert transform across [-1,1].
 c
 c       input:
 c         z - target point
@@ -55,13 +54,17 @@ c
 c       output:
 c         pot - the Hilbert transform of f on [a,b]
 c
+c       NOTE: this routine should more or less be as accurate as you
+c       have resolved the function f on [a,b] - meaning that if the
+c       Legendre expansion of f has decayed to 10^{-12}, then the
+c       integral is accurate to 10^{-12} (or better}
+c
+c
+c       first: compute the equivalent target relative to [-1,1]
 c
         done = 1
-c
-c       compute the equivalent target relative to [-1,1]
-c
-        z2 = 2*(z-a)/(b-a)-1
-        call prin2('z2 = *', z2, 2)
+        z2 = 2*(z-a)/(b-a) - done
+cccc        call prin2('z2 = *', z2, 2)
         call hilbert_legendre(z2, k, vals, pot)
 c
         return
@@ -76,10 +79,10 @@ c
         complex *16 ima, z, vals(k), pot
 c
         data ima/(0,1)/
-        real *8 xs(10000), ys(10000), xnodes(10000)
-        real *8 u(1000000), v(1000000), whts(10000)
-        real *8 coefs_real(0:10000), coefs_imag(0:10000)
-        complex *16 coefs(0:10000), qfuns(0:10000), zterms(0:10000)
+        real *8 xs(1000), ys(1000), xnodes(1000)
+        real *8 u(1000000), v(1000000), whts(1000)
+        real *8 coefs_real(0:1000), coefs_imag(0:1000)
+        complex *16 coefs(0:1000), qfuns(0:1000), zterms(0:1000)
 c
 c       this routine computes the integral:
 c
@@ -94,7 +97,7 @@ c          Q_n = \frac{1}{2} \int_{-1}^1 P_n / (z - x) dx
 c
 c       all of the following calculations are done assuming that we
 c       define the branch cut in Q_n along the interval [-1,1] so that
-c       there is a jump
+c       there is a jump in the Hilbert transform across [-1,1].
 c
 c       input:
 c         z - target point
@@ -106,6 +109,12 @@ c         pot - the Hilbert transform of f
 c
 c
 c       get the expansion coefficients of vals
+c
+        if (k .gt. 900) then
+          call prinf('k = *', k, 1)
+          call prinf('bomb!! k is too large*', ima, 0)
+          stop
+        endif
 c
         itype = 2
         call legeexps(itype, k, xnodes, u, v, whts)
@@ -121,54 +130,23 @@ c
         do i = 0,k-1
           coefs(i) = coefs_real(i) + ima*coefs_imag(i)
         enddo
-c
-        call prin2('coefs = *', coefs, 2*k)
-c
-c       crop the coefficients so as to not overresolve
-c
-        rnorm = 0
-        eps = 1.0d-12
-        do i = 0,k-1
-          rnorm = rnorm + abs(coefs(i))**2
-        enddo
-
-        rnorm2 = 0
-c
-        do i = 0,k-1
-          rnorm2 = rnorm2 + abs(coefs(i))**2
-          rnorm3 = 0
-          do j = i+1,k-1
-            rnorm3 = rnorm3 + abs(coefs(j))**2
-          enddo
-          ratio = sqrt(rnorm3/rnorm2)
-          nterms = i
-          if (ratio .le. eps) then
-            goto 1300
-          endif
-        enddo
-
- 1300 continue
 
 c
-c       only sum over the first nterms
+c       evaluate the first k-1 Q_n's
 c
-        call zqneval(z, nterms, qfuns)
-        call prin2('coefs = *', coefs, 2*nterms)
-        call prin2('qfuns = *', qfuns, 2*nterms)
+        call zqneval(z, k-1, qfuns)
 c
-c        write(6,*) 'z = ', z
-c        do i = 0,nterms
-c          write(6,*) 'i = ', i, qfuns(i)
-c        enddo
+cccc        call prin2('coefs = *', coefs, 2*nterms)
+cccc        call prin2('qfuns = *', qfuns, 2*nterms)
+
+c
+c       and evaluate the expansion
 c
         pot = 0
-        do i = 0,nterms
+        do i = 0,k-1
           pot = pot + 2*coefs(i)*qfuns(i)
-          zterms(i) = 2*coefs(i)*qfuns(i)
+cccc          zterms(i) = 2*coefs(i)*qfuns(i)
         enddo
-c
-c        call prin2('zterms = *', zterms, 2*nterms)
-
 c
         return
         end
@@ -245,8 +223,22 @@ c
         complex *16 z, qfuns(0:n), d, q0, q1, qnext, qn
         complex *16 ratio
 c
+c       Evaluate Q_0 .. Q_n at the point z in the complex plane.
+c       Taking the branch cut along [-1,1] means that Q_n decays
+c       as z \to \infty. We must use an up, down, and normalize
+c       recursion.
+c
+c       input:
+c         z - the complex target point
+c         n - max order of Q_n to evaluate
+c
+c       ouput:
+c         qfuns - returns Q_0(z), ..., Q_n(z) with the INDEX 
+c             STARTING AT ZERO
+c
 c       first, construct Q_0(z) and Q_1(z)
-c 
+c
+c
         call zqlege01(z, q0, q1)
         qfuns(0) = q0
         if (n .eq. 0) return
@@ -316,17 +308,24 @@ c
         implicit real *8 (a-h,o-z)
         complex *16 z, qfuns(0:n), d, q0, q1
 c
-c       This subroutine evaluates Q_0(z), ..., Q_n(z) for arbitrary
-c       complex values of z. If you want to
-c       evaluate Q_n on the real-line, use the routine qneval - this routine
-c       will NOT return the principal value of Q_n for z with arbitrarily
-c       small imaginary parts.
+c       Evaluate Q_0 .. Q_n at the point z in the complex plane
+c       ONLY USING AN UPWARD RECURRENCE!!! (see zqneval).
+c       Branch cut is assumed to be on [-1,1].
 c
 c       input:
-c         z - the complex point at which to evaluate Q_0, ..., Q_n
-c         n - the order of the highest q_n to return
+c         z - the complex target point
+c         n - max order of Q_n to evaluate
 c
-c       NOTE: The branch cut is taken to be on [-1,1], consistent with
+c       ouput:
+c         qfuns - returns Q_0(z), ..., Q_n(z) with the INDEX 
+c             STARTING AT ZERO
+c
+c       NOTE: 
+c       If you want to evaluate Q_n on the real-line, use the 
+c       routine qneval - this routine will NOT return the principal 
+c       value of Q_n for z with arbitrarily small imaginary parts.
+c
+c       NOTE 2: The branch cut is taken to be on [-1,1], consistent with
 c       the identity:
 c
 c               Q_n(z) = 1/2 \int_{-1}^1 P_n(x)/(z - x) dx
@@ -343,12 +342,7 @@ c
 c       recurse up until 
 c 
         do i=1,n-1
-cccc        do i=1,900
           qfuns(i+1)=( (2*i+1)*z*qfuns(i)-i*qfuns(i-1) ) /(i+1)
-cccc          call prinf('i = *', i+1, 1)
-cccc          call prin2('qfuns = *', qfuns(i+1), 2)
-cccc          call prin2('abs qfuns = *', abs(qfuns(i+1)), 2)
-cccc          write(6,*) 'i = ', i+1, abs(qfuns(i+1))
         enddo
 c 
         return
@@ -385,12 +379,12 @@ c     NOTE: the indexing of qfuns begins at 0 !!!
 c
 c     NOTE 2: you will lose digits if x is extremely close to +/- 1 because
 c         of floating point errors in subtraction - this cannot be avoided.
-c         See the special purpose routine ... for this case.
 c 
 c        . . . if x is inside the interval [-1,1], or sufficiently
 c              close to 1 or -1, evaluate the Legenedre functions
 c              via the simple recursion
-c 
+c
+c
         if(dabs(x) .lt. 1) goto 1100
 c 
         delta=dabs(x)-1
@@ -483,5 +477,3 @@ c
 c 
         return
         end
-  
-  

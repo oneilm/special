@@ -126,7 +126,7 @@ c
 c       find the ellipse on which you can just evaluate the
 c       Cauchy transform
 c
-        ntheta = 200
+        ntheta = 50
         sc = 2.0d0
         a = 2d0
         b = 1d0
@@ -152,7 +152,7 @@ c
 c
 cccc        call prin2('cvals = *', cvals, 2*ntheta)
         call prin2('from recursion, cvals2 = *', cvals2, 2*ntheta)
-cccc        call prin2('errs on ellipse = *', errs, ntheta)
+        call prin2('errs on ellipse = *', errs, ntheta)
 
         errmax = -1
         do i = 1,ntheta
@@ -167,21 +167,28 @@ c
         call prin2('zfuns = *', zfuns, 2*m+2)
         write(6,*) 'm = ', m, 'q_m = ', zfuns(m)
 
-        stop
-
+        print *
+        print *
+        print *
 
 c
 c       test the routine for computing the Cauchy transform
 c       of a Legendre expansion
 c
+        k = 150 
+        ifwhts = 1
+        call legewhts(k, xs, whts, ifwhts)
+c
         do i = 1,k
           vals(i) = cos(pi*xs(i)) + ima*sin(pi*xs(i))
-          vals(i) = exp(ima*14.5d0*xs(i))
+          vals(i) = exp(ima*24.5d0*xs(i))
         enddo
 c
-        z = 1.25d0 + ima*.5d0
+        z = .25d0 + ima/1
         call hilbert_legendre(z, k, vals, pot)
         call prin2('from hilbert_legendre, pot = *', pot, 2)
+        write(6,*) 'full precision = ', pot
+        write(13,*) 'full precision = ', pot
 c
         zint = 0
         do i = 1,k
@@ -190,7 +197,7 @@ c
 c
         call prin2('discretely, pot = *', zint, 2)
         call prin2('difference = *', pot - zint, 2)
-        
+
 c
 c       test the piecewise routine
 c
@@ -201,28 +208,23 @@ c
         a = .2d0
         b = .8d0
         h = b-a
-
-c        call prin2('before, xs = *', xs, k)
-c        call prin2('before, whts = *', whts, k)
-
+c
         do i = 1,k
           xs(i) = (xs(i)+1)/2*h + a
           whts(i) = whts(i)/2*h
         enddo
 c
-c        call prin2('after, xs = *', xs, k)
-c        call prin2('after, whts = *', whts, k)
-c        stop
-
         do i = 1,k
           vals(i) = cos(pi*xs(i)) + ima*sin(pi*xs(i))
-cc          vals(i) = exp(ima*14.5d0*xs(i))
-cc          vals(i) = 1
+          vals(i) = exp(ima*24.5d0*xs(i))
         enddo
 c
-        z = 1.25d0 + ima*.5d0
         call hilbert_legendre_ab(a, b, z, k, vals, pot)
+        call prin2('a = *', a, 1)
+        call prin2('b = *', b, 1)
         call prin2('from hilbert_legendre_ab, pot = *', pot, 2)
+        write(6,*) 'full precision = ', pot
+        write(13,*) 'full precision = ', pot
 c
         zint = 0
         do i = 1,k
@@ -231,12 +233,20 @@ c
 c
         call prin2('discretely, pot = *', zint, 2)
         call prin2('difference = *', pot - zint, 2)
-
-
+c
         stop
         end
 c 
 c 
+c
+c
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c
+c       utility routines are below here, not necessary stuff
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c
 c
 c
 c
