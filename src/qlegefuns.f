@@ -242,6 +242,78 @@ c
 c
         subroutine zqneval(z, n, qfuns)
         implicit real *8 (a-h,o-z)
+        complex *16 z, qfuns(0:n), d, q0, q1, qnext, qn
+        complex *16 ratio
+c
+c       first, construct Q_0(z) and Q_1(z)
+c 
+        call zqlege01(z, q0, q1)
+        qfuns(0) = q0
+        if (n .eq. 0) return
+c
+        qfuns(1) = q1
+        if (n .eq. 1) return
+c
+c       recurse up until things have blown up sufficiently
+c 
+        qlarge = 1.0d16/abs(q0)
+        qlarge = qlarge**2
+c
+        nmax = 10000
+        ntop = 0
+c
+        do i=1,nmax
+          qn = ( (2*i+1)*z*q1-i*q0 ) /(i+1) 
+          q0 = q1
+          q1 = qn
+          if (abs(qn) .gt. qlarge) then
+            ntop = i+1
+            goto 1300
+          endif 
+        enddo
+c 
+ 1300 continue
+
+c
+c       if it did not blowup, just recurse up
+c
+        if (ntop .eq. 0) then
+          call zqneval_up(z, n, qfuns)
+          return
+        endif
+
+c
+c       otherwise recurse down
+c
+        ntop = ntop+5
+cccc        call prinf('ntop = *', ntop, 1)
+c
+        qfuns(ntop) = 1
+        qfuns(ntop+1) = 0
+c
+        do i = ntop,1,-1
+          qfuns(i-1) = (2*i+1)*z*qfuns(i)/i - (i+1)*qfuns(i+1)/i
+        enddo
+c
+c       and normalize
+c
+        call zqlege01(z, q0, q1)
+        ratio = q0/qfuns(0)
+c
+        do i = 0,ntop
+          qfuns(i) = qfuns(i)*ratio
+        enddo
+
+        return
+        end
+        
+c
+c
+c
+c
+c
+        subroutine zqneval_up(z, n, qfuns)
+        implicit real *8 (a-h,o-z)
         complex *16 z, qfuns(0:n), d, q0, q1
 c
 c       This subroutine evaluates Q_0(z), ..., Q_n(z) for arbitrary

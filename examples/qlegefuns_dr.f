@@ -24,7 +24,7 @@ c
         real *8 errs(10000)
         complex *16 z, zfuns(0:100000), ima, zfuns2(0:100000)
         complex *16 zint, zint1, q0, q1, vals(100000), pot
-        complex *16 cvals(100000), cvals2(10000)
+        complex *16 cvals(100000), cvals2(10000), z2
 c 
 
         call prini(6,13)
@@ -74,7 +74,7 @@ c
 
         small = 1.0d-1
         small = 1.0d0
-        small = 1.0d-1
+        small = 1.0d-6
         z = .5d0 - ima*small
         call prin2('z = *', z, 2)
         call zqlege01(z, q0, q1)
@@ -107,7 +107,7 @@ c       try the cauchy integral of P_m
 c
         print *
         print *
-        m = 16
+        m = 16 
         call prinf('degree of P_m, m = *', m, 1)
         call prin2('target = *', z, 2)
 c
@@ -127,19 +127,22 @@ c       find the ellipse on which you can just evaluate the
 c       Cauchy transform
 c
         ntheta = 200
-        a = 1.5d0
-        b = .5d0
+        sc = 2.0d0
+        a = 2d0
+        b = 1d0
+        a = a*sc
+        b = b*sc
 c
         do j = 1,ntheta
           theta = 2*pi*(j-1)/ntheta
-          z = a*cos(theta) + ima*b*sin(theta)
+          z2 = a*cos(theta) + ima*b*sin(theta)
           zint = 0
           do i = 1,k
             call legepol(xs(i), m, pol, der)
-            zint = zint + whts(i)*pol/(z - xs(i))/2
+            zint = zint + whts(i)*pol/(z2 - xs(i))/2
           enddo
           cvals(j) = zint
-          call zqneval(z, m, zfuns)
+          call zqneval(z2, m, zfuns)
           cvals2(j) = zfuns(m)
         enddo
 c
@@ -147,8 +150,23 @@ c
           errs(j) = cvals(j) - cvals2(j)
         enddo
 c
-        call prin2('cvals = *', cvals, 2*ntheta)
-        call prin2('errs on ellipse = *', errs, ntheta)
+cccc        call prin2('cvals = *', cvals, 2*ntheta)
+        call prin2('from recursion, cvals2 = *', cvals2, 2*ntheta)
+cccc        call prin2('errs on ellipse = *', errs, ntheta)
+
+        errmax = -1
+        do i = 1,ntheta
+          if (abs(errs(i)) .gt. errmax) errmax = abs(errs(i))
+        enddo
+        call prin2('maximum error on the ellipse = *', errmax, 1)
+c
+        call zqneval_up(z, m, zfuns)
+        call prin2('zfuns_up = *', zfuns, 2*m+2)
+
+        call zqneval(z, m, zfuns)
+        call prin2('zfuns = *', zfuns, 2*m+2)
+        write(6,*) 'm = ', m, 'q_m = ', zfuns(m)
+
         stop
 
 
