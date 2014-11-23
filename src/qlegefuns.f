@@ -25,7 +25,11 @@ c      routines...
 c 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
-c 
+c
+
+
+
+
         subroutine hilbert_legendre_ab(a, b, z, k, vals, pot)
         implicit real *8 (a-h,o-z)
         complex *16 ima, z, vals(k), pot, z2
