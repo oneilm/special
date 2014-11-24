@@ -1,25 +1,50 @@
-PROJECT=int2
 
-OBJSUF=o
-FC=gfortran  -w -c
-FLINK=gfortran -w -o $(PROJECT)
+HOST = osx-gfortran
+##HOST = osx-intel
+PROJECT = int2
 
-.PHONY: $(PROJECT) clean list
+ifeq ($(HOST),osx-gfortran)
+  FC = gfortran -c -w
+  FFLAGS = -O3
+  FLINK = gfortran -w -o $(PROJECT) -framework accelerate
+endif
 
-.f.$(OBJSUF):
-		$(FC) $<
+ifeq ($(HOST),osx-intel)
+  FC = ifort -c -w
+  FFLAGS = -O3
+  FLINK = ifort -w -mkl -o $(PROJECT)
+endif
 
-vpath %.f .:../src
 
-FSRCS   =   legehalf_dr.f legehalf.f  prini.f
+.PHONY: all clean list
 
-OBJS    =  $(FSRCS:.f=.$(OBJSUF)) 
 
-$(PROJECT): $(OBJS)
-			rm -f $(PROJECT)
-			$(FLINK) $(OBJS)
-			./$(PROJECT)
+SOURCES = legehalf_dr.f ../src/legehalf.f  ../../utils/prini.f
+
+OBJECTS = $(patsubst %.f,%.o,$(patsubst %.f90,%.o,$(SOURCES)))
+
+#
+# use only the file part of the filename, then manually specify
+# the build location
+#
+
+%.o : %.f
+	$(FC) $(FFLAGS) $< -o $@
+
+%.o : %.f90
+	$(FC) $(FFLAGS) $< -o $@
+
+all: $(OBJECTS)
+	rm -f $(PROJECT)
+	$(FLINK) $(OBJECTS)
+	./$(PROJECT)
 
 clean:
-		rm -f $(OBJS)
-		rm -f $(PROJECT)
+	rm -f $(OBJECTS)
+	rm -f $(PROJECT)
+
+list: $(SOURCES)
+	$(warning Requires:  $^)
+
+
+

@@ -122,6 +122,46 @@ c
 c
 c
 c
+        subroutine torlaps_new(dum0, src, targ, nmax, dum2,
+     1      vals, grads, hesses)
+        implicit real *8 (a-h,o-z)
+        real *8 :: dum0, src(2), targ(2), dum2, vals(0:nmax)
+        real *8 :: grads(2,0:nmax), hesses(2,2,0:nmax)
+c
+c       this routine calculates the first nmax+1 laplace
+c       fourier modes, i.e. the functions
+c
+c           1/(2*pi) 1/sqrt(r*r0) Q_{n-1/2}(\xi)
+c
+c       for n=0, ..., nmax. this function is equivalent to
+c       calculating the integral
+c
+c           \int_0^{2*pi} 1/(4*pi*R) * exp(-i*n*\theta) d\theta
+c
+
+c
+c       first run the forward recursion until blowup happens
+c
+        ifder = 0
+        call torlap0(targ(1),targ(2), src(1), src(2), val,
+     1      ifder,dr,dz,dr0,dz0)
+        call torlap1(targ(1),targ(2), src(1), src(2), val1,
+     1      ifder,dr,dz,dr0,dz0)
+c
+        eps = 1.0d-15
+        rmax = 1/eps**2
+        do i = 1,10000
+          p2 = 
+        enddo
+
+c
+        return
+        end
+c
+c
+c
+c
+c
         subroutine torlaps(r,z,r0,z0,nmax,vals,ifder,drs,dzs,
      1      dr0s,dz0s)
         implicit real *8 (a-h,o-z)
