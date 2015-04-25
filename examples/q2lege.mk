@@ -19,7 +19,7 @@ endif
 .PHONY: all clean list
 
 
-SOURCES = legehalf_dr.f ../src/legehalf.f  ../../utils/prini.f
+SOURCES = q2lege_dr.f90 ../src/q2lege.f90  ../../utils/prini.f ../src/elliptic.f
 
 OBJECTS = $(patsubst %.f,%.o,$(patsubst %.f90,%.o,$(SOURCES)))
 

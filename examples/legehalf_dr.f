@@ -6,10 +6,10 @@ c               oneil@cims.nyu.eu
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
-        implicit real *8 (a-h,o-z)
+        implicit double precision (a-h,o-z)
         dimension pols(0:10000)
-        complex *16 ima,cdz,cval,cval2,zk,cval3
-        real *8 tarray(2),result,vals(100000),
+        double complex ima,cdz,cval,cval2,zk,cval3
+        double precision tarray(2),result,vals(100000),
      1      pvals(100000),qvals(100000),pders(100000),qders(100000),
      2      drs(100000),dr0s(100000),dzs(100000),dz0s(100000)
 c
@@ -26,6 +26,7 @@ c
 c
         x=1.5d0
         call prin2('x=*',x,1)
+        write(6,*) 'x = ', x
 c
         call q2lege01(x,q0,q1)
         call prin2('q0=*',q0,1)
@@ -38,7 +39,7 @@ c
         call prin2('and q ratio=*',ratio,1)
         call prin2('error in q ratio=*',err,1)
 c
-        call pq2leges(x,nmax,pvals,qvals)        
+        call pq2leges(x,nmax,pvals,qvals)
         call prin2('pvals=*',pvals,nmax+1)
         call prin2('qvals=*',qvals,nmax+1)
 c
@@ -53,7 +54,7 @@ c
         print *
 c
         xi=.6d0
-        h=1.0d-5
+        h=1.0d-10
         call elliptic_ke(xi-h,fk1,fe1)
         call elliptic_ke(xi+h,fk2,fe2)
         fkder=(fk2-fk1)/2/h
@@ -70,6 +71,9 @@ c
         call prin2('from formula, der of fe is *',fed,1)
         call prin2('error is *',feder-fed,1)
 c
+        stop
+
+
         print *
         print *
         call p2lege01der(x,p0der,p1der)
