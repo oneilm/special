@@ -29,7 +29,8 @@
         ! calculate Q_-1/2 and Q_1/1
         !
 
-        call q2lege01(x, val0, val1)
+        xminus = x-1
+        call q2lege01(x, xminus, val0, val1)
         write(6,*) 'Q_-1/2 = ', val0
         write(6,*) 'Q_1/2 =  ', val1
         write(13,*) 'Q_-1/2 = ', val0

@@ -15,7 +15,13 @@
 
         !
         ! this is basically a wrapper for q2leges that will return
-        ! the normalized version which are the fourier modes of 1/r
+        ! the normalized version which are the fourier modes of 1/r.
+        ! The integral computed is:
+        !
+        !     a_n = \frac{1}{2 \pi} \int_0^{2\pi} exp(-i*n*\theta)
+        !         frac{1}{4 \pi R} d\theta
+        !
+        ! Just a reminder, this is an even integral, so a_{-n} = a_n
         !
         ! input:
         !   nterms - the number of terms to compute, 0 through nterms
@@ -76,7 +82,7 @@
         
         if (nterms .lt. 0) return
 
-        call q2lege01(x, q0, q1)
+        call q2lege01(x, xminus, q0, q1)
 
         !if (x .le. 0.001d0) then
         !  stop
@@ -142,7 +148,7 @@
 
 
 
-      subroutine q2lege01(x, val0, val1)
+      subroutine q2lege01(x, xminus, val0, val1)
         implicit double precision (a-h,o-z)
         !
         ! this subroutine returns the value of the first two
@@ -162,12 +168,14 @@
         !   val1 - value of Q_{1/2}(x)
         !
         
-        xarg=2/(1+x)
-        xarg2=sqrt(xarg)
-        call elliptic_ke(xarg2,valk,vale)
+        xarg = 2/(1+x)
+        rk = sqrt(xarg)
+        rkp = sqrt(xminus/(x+1))
 
-        val0=sqrt(xarg)*valk
-        val1=x*sqrt(xarg)*valk-sqrt(2*(x+1))*vale        
+        ifder = 0
+        call ellipticke(rk, rkp, valk, vale, ifder, dk, de)
+        val0 = rk*valk
+        val1 = x*rk*valk - sqrt(2*(x+1))*vale        
 
         return
       end subroutine q2lege01

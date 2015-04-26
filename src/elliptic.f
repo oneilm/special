@@ -4,7 +4,7 @@
 
 
 
-        subroutine ellipke(rk,rkp,valk,vale,ifder,dk,de)
+        subroutine ellipticke(rk, rkp, valk, vale, ifder, dk, de)
         implicit double precision (a-h,o-z)
         double precision coefsk(13),coefse(13),pi
         data pi/3.1415926535897931d0/
@@ -54,7 +54,7 @@ c         dk, de - derivatives of K and E
 c
 c
         done=1
-        call ke_eva(rk,rkp,valk,vale)
+        call elliptic_vals(rk, rkp, valk,vale)
         if (ifder .ne. 1) return
 
 c
@@ -62,9 +62,9 @@ c       . . . and then compute the derivatives if desired
 c
         thresh=.2d0
         if (rk .gt. thresh) then
-            dk=vale/rkp**2/rk-valk/rk
-            de=(vale-valk)/rk
-            return
+          dk=vale/rkp**2/rk-valk/rk
+          de=(vale-valk)/rk
+          return
         endif
 
 c
@@ -72,11 +72,11 @@ c       use a series expansion
 c
         dk=0
         de=0
-        do 1400 i=1,13
-        i2=2*i-1
-        dk=dk+coefsk(i)*rk**i2
-        de=de+coefse(i)*rk**i2
- 1400 continue
+        do i=1,13
+          i2=2*i-1
+          dk=dk+coefsk(i)*rk**i2
+          de=de+coefse(i)*rk**i2
+        enddo
 c
         dk=dk*pi
         de=-de*pi
@@ -88,7 +88,7 @@ c
 c
 c
 c
-        subroutine ke_eva(rk,rkp,valk,vale)
+        subroutine elliptic_vals(rk, rkp, valk, vale)
         implicit double precision (a-h,o-z)
         double precision cpe(6)
         data cpe /0.5000000000000000d+00,
@@ -124,16 +124,17 @@ c
         b=1023*done/1024
 c
 
-        call elliptic_ke(rk,valk,vale)
-        if (rk .lt. b) return
-
+        if (rk .lt. b) then
+          call elliptic_tables(rk, valk, vale)
+          return
+        endif
+        
 c
 c       if here, then use rkp which the user should have supplied
 c       CORRECTLY as the value sqrt(1-rk**2)
 c
-
         rlog=log(4/rkp)
-
+c
         coef2=done/2/2*(rlog-1)
         coef4=(done*3/8)**2*(rlog-1-done/6)
         coef6=(done*15/48)**2*(rlog-1-done/6-done/15)
@@ -179,7 +180,7 @@ c
 c
 c
 c
-        subroutine elliptic_ke(rk,fk,fe)
+        subroutine elliptic_tables(rk,fk,fe)
         implicit double precision (a-h,o-z)
         double precision ck1(21),ce1(19),ck2(21),ce2(19),
      1      ck3(21),ce3(18),ck4(21),ce4(18),ck5(21),ce5(18),
