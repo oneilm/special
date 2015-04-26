@@ -9,6 +9,7 @@
         implicit double precision (a-h,o-z)
         real *8 :: vals(0:1000000), src(10), targ(10)
         real *8 :: vals2(0:1000000), errs(0:1000000)
+        real *8 :: ders(0:1000000), der2s(0:1000000)
         complex *16 :: ima
 
         call prini(6,13)
@@ -37,6 +38,66 @@
         write(13,*) 'Q_1/2 =  ', val1
 
         !
+        ! test the derivative routine
+        !
+        call q2lege01_all(x, xminus, w0, w1, der0, der1, &
+            der20, der21)
+
+        print *
+        call prin2('from q2lege_all, val0 = *', w0, 1)
+        call prin2('from q2lege_all, val1 = *', w1, 1)
+        call prin2('err in val0 = *', val0-w0, 1)
+        call prin2('err in val1 = *', val1-w1, 1)
+
+        h = .0001d0
+        y = x+h
+        yminus = y-1
+        call q2lege01(y, yminus, b0, b1)
+        y = x-h
+        yminus = y-1
+        call q2lege01(y, yminus, a0, a1)
+
+        u0 = (b0-a0)/2/h
+        u1 = (b1-a1)/2/h
+
+        print *
+        call prin2('from finite difference, der0 = *', u0, 1)
+        call prin2('from finite difference, der1 = *', u1, 1)
+        call prin2('from q2lege_all, der0 = *', der0, 1)
+        call prin2('from q2lege_all, der1 = *', der1, 1)
+        call prin2('err in der0 = *', u0-der0, 1)
+        call prin2('err in der1 = *', u1-der1, 1)
+
+        y = x+h
+        yminus = y-1
+        call q2lege01_all(y, yminus, w0, w1, a0, a1, &
+            z0, z1)
+
+        y = x-h
+        yminus = y-1
+        call q2lege01_all(y, yminus, w0, w1, b0, b1, &
+            z0, z1)
+
+        u0 = (b0-a0)/2/h
+        u1 = (b1-a1)/2/h
+        print *
+        call prin2('from finite difference, der20 = *', u0, 1)
+        call prin2('from finite difference, der21 = *', u1, 1)
+        call prin2('from q2lege_all, der20 = *', der20, 1)
+        call prin2('from q2lege_all, der21 = *', der21, 1)
+        call prin2('err in der20 = *', u0-der20, 1)
+        call prin2('err in der21 = *', u1-der21, 1)
+
+
+
+
+
+        
+        stop
+
+        
+        
+        !
         ! calculate the first nterms
         !
         xminus = x - done
@@ -51,6 +112,21 @@
           write(13,*), 'i = ', i, 'q_i-1/2 = ', vals(i)
         enddo
 
+
+        !
+        ! calculate the first nterms along with first and second derivatives
+        !
+        call q2leges_all(ier, nterms, x, xminus, vals, ders, &
+          der2s, lvals, ntop)
+        call prinf('after q2leges_all, ier = *', ier, 1)
+        call prinf('after q2leges_all, ntop = *', ntop, 1)
+        call prin2('q-halves are = *', vals, nterms+1)
+        call prin2('q-halves ders = *', ders, nterms+1)
+        call prin2('q-halves der2s = *', der2s, nterms+1)
+
+        stop
+
+        
         !
         ! call the normalized routine to compute the Fourier modes of
         ! 1/r

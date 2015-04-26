@@ -1108,7 +1108,7 @@ c
 c
         xarg=2/(1+x)
         xarg2=sqrt(xarg)
-        xarg2p=sqrt(2-xarg2**2)
+        xarg2p=sqrt(1-xarg2**2)
         ifder=1
         call ellipke(xarg2,xarg2p,valk,vale,ifder,fkd,fed)
 c
