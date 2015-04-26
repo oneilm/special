@@ -5,6 +5,48 @@
         ! polynomials of the second-kind
         !
 
+
+
+
+      subroutine torlaps(ier, nterms, src, targ, vals, lvals, ntop)
+        implicit real *8 (a-h,o-z)
+        real *8 :: vals(0:lvals), src(2), targ(2)
+        real *8, parameter :: done=1, half=0.5d0
+
+        !
+        ! this is basically a wrapper for q2leges that will return
+        ! the normalized version which are the fourier modes of 1/r
+        !
+        ! input:
+        !   nterms - the number of terms to compute, 0 through nterms
+        !       are returned
+        !   src - the source in r,z coordinates
+        !   targ - the target in r,z coordiates
+        !   lvals - the length of vals
+        !
+        ! output:
+        !   vals -
+        !   ntop -
+        !
+
+        x = targ(1)**2 + src(1)**2 + (targ(2) - src(2))**2
+        x = x/2/src(1)/targ(1)
+        xminus = (targ(2) - src(2))**2 + (targ(1) - src(1))**2
+        xminus = xminus/2/src(1)/targ(1)
+        call q2leges(ier, nterms, x, xminus, vals, lvals, ntop)
+
+        pi = 4*atan(done)
+        fac = 4*pi*pi*sqrt(src(1)*targ(1))
+        do i = 0,ntop
+          vals(i) = vals(i)/fac
+        enddo
+        
+        return
+      end subroutine torlaps
+
+
+
+
       subroutine q2leges(ier, nterms, x, xminus, vals, lvals, ntop)
         implicit real *8 (a-h,o-z)
         real *8 :: vals(0:lvals)

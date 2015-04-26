@@ -7,7 +7,9 @@
 
       program q2legetest
         implicit double precision (a-h,o-z)
-        real *8 :: vals(0:1000000)
+        real *8 :: vals(0:1000000), src(10), targ(10)
+        real *8 :: vals2(0:1000000), errs(0:1000000)
+        complex *16 :: ima
 
         call prini(6,13)
 
@@ -52,12 +54,51 @@
         ! call the normalized routine to compute the Fourier modes of
         ! 1/r
         !
+        src(1) = 1.0d0
+        src(2) = 1.0d0
+
+        targ(1) = 1.5d0
+        targ(2) = 1.5d0
+        
         call torlaps(ier, nterms, src, targ, vals, lvals, ntop)
         call prinf('after torlaps, ier = *', ier, 1)
+        call prinf('after torlaps, ntop = *', ntop, 1)
+        call prin2('torlaps are = *', vals, nterms+1)
 
-
+        !
+        ! do the direct integration now
+        !
+        n = 1000
+        h = 2*pi/n
+        call prin2('h = *', h, 1)
         
+        do i = 0,nterms
+          vals2(i) = 0
+        
+          do j = 1,n
+            theta = (j-1)*h
+            r = src(1)**2 + targ(1)**2 - 2*src(1)*targ(1)*cos(theta) &
+                + (src(2) - targ(2))**2
+            r = sqrt(r)
+            vals2(i) = vals2(i) + h*exp(-ima*i*theta)/(4*pi*r)
+          enddo
+
+          vals2(i) = vals2(i)/2/pi
+        enddo
+
+        call prin2('from direct integration, vals2 = *', vals2, &
+            nterms+1)
+
+        do i = 0,nterms
+          errs(i) = vals2(i) - vals(i)
+          vals2(i) = vals2(i)/vals(i)
+        enddo        
+
+        call prin2('errs = *', errs, nterms+1)
+        call prin2('ratios = *', vals2, nterms+1)
         
         stop
+
+        
       end program q2legetest
       
