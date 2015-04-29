@@ -10,6 +10,9 @@
         real *8 :: vals(0:1000000), src(10), targ(10)
         real *8 :: vals2(0:1000000), errs(0:1000000)
         real *8 :: ders(0:1000000), der2s(0:1000000)
+        real *8 :: y1s(0:10000), y0s(0:10000)
+        real *8 :: z1s(0:10000), z0s(0:10000)
+        real *8 :: us(0:10000), ws(0:10000)
         complex *16 :: ima
 
         call prini(6,13)
@@ -70,12 +73,12 @@
 
         y = x+h
         yminus = y-1
-        call q2lege01_all(y, yminus, w0, w1, a0, a1, &
+        call q2lege01_all(y, yminus, w0, w1, b0, b1, &
             z0, z1)
 
         y = x-h
         yminus = y-1
-        call q2lege01_all(y, yminus, w0, w1, b0, b1, &
+        call q2lege01_all(y, yminus, w0, w1, a0, a1, &
             z0, z1)
 
         u0 = (b0-a0)/2/h
@@ -88,28 +91,25 @@
         call prin2('err in der20 = *', u0-der20, 1)
         call prin2('err in der21 = *', u1-der21, 1)
 
-
-
-
-
-        
-        stop
-
-        
-        
         !
         ! calculate the first nterms
         !
         xminus = x - done
         lvals = 1000000
         call q2leges(ier, nterms, x, xminus, vals, lvals, ntop)
+        print *
+        print *
         call prinf('after q2leges, ier = *', ier, 1)
         call prinf('after q2leges, ntop = *', ntop, 1)
         call prin2('q-halves are = *', vals, nterms+1)
 
+
+        stop
+
+        
         do i = 0,nterms
-          write(6,*), 'i = ', i, 'q_i-1/2 = ', vals(i)
-          write(13,*), 'i = ', i, 'q_i-1/2 = ', vals(i)
+          !!!write(6,*), 'i = ', i, 'q_i-1/2 = ', vals(i)
+          !!!write(13,*), 'i = ', i, 'q_i-1/2 = ', vals(i)
         enddo
 
 
@@ -123,6 +123,37 @@
         call prin2('q-halves are = *', vals, nterms+1)
         call prin2('q-halves ders = *', ders, nterms+1)
         call prin2('q-halves der2s = *', der2s, nterms+1)
+
+        !
+        ! test everythign using finite differences...
+        !
+        y = x+h
+        yminus = y-1
+        call q2leges_all(ier, nterms, y, yminus, y1s, z1s, &
+          der2s, lvals, ntop)
+
+        call prin2('y1s = *', y1s, nterms+1)
+        
+        y = x-h
+        yminus = y-1
+        call q2leges_all(ier, nterms, y, yminus, y0s, z0s, &
+          der2s, lvals, ntop)
+
+        call prin2('y0s = *', y0s, nterms+1)
+
+        do i = 0,nterms
+          !!!y1s(i) = y1s(i) - y0s(i)
+          !!!ws(i) = (z1s(i) - z0s(i))/2/h
+        enddo
+
+        do i = 0,nterms
+          !!us(i) = ders(i) - ws(i)
+          !!ws(i) = der2s(i) - ws(i)
+        enddo
+
+        call prin2('errs in first derivatives = *', y1s, nterms+1)
+        !!!call prin2('errs in second derivatives = *', zs, nterms+1)
+        
 
         stop
 

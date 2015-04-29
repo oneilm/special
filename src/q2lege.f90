@@ -8,6 +8,132 @@
 
 
 
+      subroutine torlap1_kernel(par0, src, targ, mode, work, &
+          val, grad, hess)
+        implicit real *8 (a-h,o-z)
+        real *8 :: src(2), targ(2), pars2(1), grad(2), hess(2,2)
+        real *8, parameter :: done=1, half=0.5d0
+
+        !
+        ! this returns the value of a single mode of the axisymmetric
+        ! Laplace Greens's function:
+        !
+        !   val = \frac{1}{2 \pi} \int_0^{2\pi} exp(-i*mode*\theta)
+        !         frac{1}{4 \pi R} d\theta
+        !
+        ! input:
+        !   work - work array, must be sufficiently long, say 30000
+        !
+        ! output:
+        !
+
+        lwork = 9900
+        i1 = 1
+        i2 = i1 + lwork + 10
+        i3 = i2 + lwork + 10
+        lvals = lwork/4
+
+        !!!!call torlaps(ier, nterms, src, targ, vals, lvals, ntop)
+        call torlaps_all(ier, nterms, src, targ, work(i1), lvals, &
+            work(i2), work(i3), ntop)
+
+        if (ier .ne. 0) then
+          call prinf('ier = *', ier, 1)
+          stop
+        endif
+
+        ival = mode+1
+        igrad = i2 + (mode)*2
+        ihess = i3 + mode*4 
+        
+        val = work(mode+1)
+        grad(1) = work(igrad)
+        grad(2) = work(igrad+1)
+
+        hess(1,1) = work(ihess)
+        hess(2,1) = work(ihess+1)
+        hess(1,2) = work(ihess+2)
+        hess(2,2) = work(ihess+3)
+        
+        return
+      end subroutine torlap1_kernel
+
+
+
+
+
+      subroutine torlaps_kernel(par0, src, targ, modemax, pars2, &
+          vals, grads, hesses)
+        implicit real *8 (a-h,o-z)
+        real *8 :: src(2), targ(2), pars2(1)
+        real *8 :: vals(0:1), grad(2,0:1), hesses(2,2,0:1)
+        real *8, parameter :: done=1, half=0.5d0
+
+        !
+        ! this returns the value of a single mode of the axisymmetric
+        ! Laplace Greens's function:
+        !
+        !   val = \frac{1}{2 \pi} \int_0^{2\pi} exp(-i*mode*\theta)
+        !         frac{1}{4 \pi R} d\theta
+        !
+        ! input:
+        !   work - work array, must be sufficiently long, say 30000
+        !
+        ! output:
+        !   vals - the values
+        !
+        !
+        !   NOTE: the above arrays must be say, 10000 long each -
+        !   just in case
+        !
+
+        !!!!call torlaps(ier, nterms, src, targ, vals, lvals, ntop)
+        !!call torlaps_all(ier, nterms, src, targ, work(i1), lvals, &
+        !!    work(i2), work(i3), ntop)
+
+        if (ier .ne. 0) then
+          call prinf('ier = *', ier, 1)
+          stop
+        endif
+
+        ival = mode+1
+        igrad = i2 + (mode)*2
+        ihess = i3 + mode*4 
+        
+        !val = work(mode+1)
+        !grad(1) = work(igrad)
+        !grad(2) = work(igrad+1)
+
+        !hess(1,1) = work(ihess)
+        !hess(2,1) = work(ihess+1)
+        !hess(1,2) = work(ihess+2)
+        !hess(2,2) = work(ihess+3)
+        
+        return
+      end subroutine torlaps_kernel
+
+
+
+
+
+      subroutine torlaps_all(ier, nterms, src, targ, vals, lvals,&
+          grads, hesses, ntop)
+        implicit real *8 (a-h,o-z)
+        real *8 :: src(2), targ(2), vals(0:lvals), grads(2,0:lvals)
+        real *8 :: hesses(2,2,0:lvals)
+        
+        !
+        ! same as torlaps, but returns the gradients and hessians as well
+        !
+        
+
+        return
+      end subroutine torlaps_all
+
+
+
+
+      
       subroutine torlaps(ier, nterms, src, targ, vals, lvals, ntop)
         implicit real *8 (a-h,o-z)
         real *8 :: vals(0:lvals), src(2), targ(2)
@@ -106,6 +232,109 @@
         ! relative precision in all values
         !
 
+        vprev = 0
+        v = 1
+        upbound = 1.0d20
+        
+        half=done/2
+        
+        do i=nterms,lvals-1
+          vnext = (2*i*x*v - (i-half)*vprev)/(i+half)
+          if (abs(vnext) .ge. upbound) then
+            ntop = i+1
+            exit
+          endif
+          vprev = v
+          v = vnext
+        enddo
+
+        !
+        ! now run the recursion down
+        !
+        if (ntop .lt. nterms) then
+          ntop = nterms+5
+        endif
+        
+        v = 1
+        vnext = 0
+          
+        do i = ntop,nterms,-1
+          vprev = (2*i*x*v - (i+half)*vnext)/(i-half)
+          vnext = v
+          v = vprev
+        enddo
+
+        vals(nterms) = vnext
+        vals(nterms-1) = v
+        do i = nterms-1,1,-1
+          vals(i-1) = (2*i*x*vals(i) - (i+half)*vals(i+1))/(i-half)
+        enddo
+          
+        ratio = q0/vals(0)
+        do i = 0,nterms
+          vals(i) = vals(i)*ratio
+        enddo
+          
+        return
+      end subroutine q2leges
+
+
+
+
+
+      subroutine q2leges_save(ier, nterms, x, xminus, vals, lvals, ntop)
+        implicit real *8 (a-h,o-z)
+        real *8 :: vals(0:lvals)
+        real *8, parameter :: done=1
+
+        !
+        ! evaluate the first nterms+1 legendre functions
+        !
+        !   Q_{-1/2}, Q_{1/2}, ..., Q_{nterms-1/2}
+        !
+        ! this routine uses Miller's algorithm: recurse up, recurse
+        ! down, and normalize. It will bomb if len is not large
+        ! enough...
+        !
+        ! input:
+        !   nterms - return values of Q_{n-1/2} from 0 through nterms
+        !   x - the argument
+        !   xminus - should be set to 1-x, evaluated as accurately as possible
+        !   lvals - the total length of vals, should be sufficiently
+        !       larger than nterms to handle an upward recursion
+        !
+        ! output:
+        !   ier - error code
+        !   vals - the values of Q_{n-1/2}
+        !   ntop - the top value needed in the recursion
+        !
+        
+        if (nterms .lt. 0) return
+
+        call q2lege01(x, xminus, q0, q1)
+
+        !if (x .le. 0.001d0) then
+        !  stop
+        !end if
+        
+        if (nterms .eq. 0) then
+          vals(0) = q0
+          ier = 0
+          return
+        endif
+        
+        if (nmax .eq. 1) then
+          vals(0) = q0
+          vals(1) = q1
+          ier = 0
+          return
+        endif
+
+        !
+        ! run the recurrence now, starting from nterms to ensure
+        ! relative precision in all values
+        !
+
         vals(nterms-1) = 0
         vals(nterms) = 1
         upbound = 1.0d20
@@ -139,7 +368,7 @@
 
         
         return
-      end subroutine q2leges
+      end subroutine q2leges_save
 
 
 
@@ -175,23 +404,24 @@
         
         if (nterms .lt. 0) return
 
-        call q2lege01(x, xminus, q0, q1)
+        call q2lege01_all(x, xminus, q0, q1, q0der, q1der, &
+            q0der2, q1der2)
 
-        !if (x .le. 0.001d0) then
-        !  stop
-        !end if
-        
         if (nterms .eq. 0) then
           vals(0) = q0
-          stop
+          ders(0) = q0der
+          der2s(0) = q0der2
           ier = 0
           return
         endif
         
         if (nmax .eq. 1) then
           vals(0) = q0
-          stop
+          ders(0) = q0der
+          der2s(0) = q0der2
           vals(1) = q1
+          ders(1) = q1der
+          der2s(1) = q1der2
           ier = 0
           return
         endif
@@ -251,7 +481,6 @@
               (i+half)*der2s(i+1))/(i-half)
         enddo
 
-        !!!call prin2('after bckwd recursion, vals = *', vals, ntop+1)
         ratio = q0/vals(0)
         ratio1 = q0der/ders(0)
         ratio2 = q0der2/der2s(0)
@@ -348,9 +577,10 @@
         der0 = (val1 - x*val0)/2/(x+1)/xminus
         der1 = (-val0 + x*val1)/2/(x+1)/xminus
 
-        der20 = -(2*(x+1)*xminus*(der1-val0-x*der0) &
+        der20 = (2*(x+1)*xminus*(der1-val0-x*der0) &
             - 4*x*(val1 - x*val0))/4/(x+1)**2/xminus**2
-        der21 = -1
+        der21 = -(2*(x+1)*xminus*(der0-val1-x*der1) &
+            - 4*x*(val0 - x*val1))/4/(x+1)**2/xminus**2
 
         return
       end subroutine q2lege01_all
